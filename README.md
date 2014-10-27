@@ -39,3 +39,26 @@ event: login
 retry: 3000
 data: {"user":"foobar","id":42}
 ```
+On the client-side you can fetch this with the following script:
+```JavaSript
+if ( !window.EventStream ) {
+  console.warn( 'EventStream is not available' );
+}
+
+var stream = new EventStream( 'events.php' );
+// for nameless events
+stream.addEventListener( 'message', function ( e ) {
+  console.log( e.data );
+});
+
+// for login events
+stream.addEventListener( 'login', function ( e ) {
+  var data = JSON.parse( e.data );
+  console.log( 'user "' + data.user + '" with id ' + data.id + ' has logged in' );
+});
+
+// on error
+stream.addEventListener( 'error' function ( e ) {
+
+});
+```
