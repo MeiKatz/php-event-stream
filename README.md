@@ -40,7 +40,7 @@ retry: 3000
 data: {"user":"foobar","id":42}
 ```
 On the client-side you can fetch this with the following script:
-```JavaSript
+```JavaScript
 if ( !window.EventStream ) {
   console.warn( 'EventStream is not available' );
 }
@@ -59,6 +59,6 @@ stream.addEventListener( 'login', function ( e ) {
 
 // on error
 stream.addEventListener( 'error' function ( e ) {
-
+  console.warn( 'an error occured: ' + e.data );
 });
 ```
