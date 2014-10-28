@@ -35,9 +35,11 @@ The script below would generate the following message:
 id: 1337
 data: new message
 data: in your inbox
+
 event: login
 retry: 3000
 data: {"user":"foobar","id":42}
+
 ```
 On the client-side you can fetch this with the following script:
 ```JavaScript
