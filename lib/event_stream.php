@@ -34,12 +34,10 @@ namespace ServerSentEvents {
       # collect generated event messages
       foreach ( $events as $event ) {
         $tmp      = $event->generate();
-        # return value could be null
-        $message .= ( $tmp === null ? '' : $tmp );
+        # return-value could be null
+        $message .= ( $tmp === null ? '' : $tmp . "\n" );
       }
       
-      # end up the stream with a newline
-      $message .= "\n";
       return $message;
     }
     
