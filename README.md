@@ -3,6 +3,9 @@ PHP EventStream for Server-sent Events
 ```php
 require_once 'event_stream.php';
 
+use ServerSentEvents\Event;
+use ServerSentEvents\EventStream;
+
 # create a nameless event (will be send to "message")
 $a = Event::create();
 
