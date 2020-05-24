@@ -1,2 +1,2 @@
 <?php
-  require_once 'lib/event_stream.php';
+  require_once "lib/EventStream.php";
