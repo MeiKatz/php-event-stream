@@ -1,69 +1,125 @@
 PHP EventStream for Server-sent Events
 ================
 ```php
-require_once 'event_stream.php';
+require_once "Event.php";
+require_once "EventStream.php";
 
 use ServerSentEvents\Event;
 use ServerSentEvents\EventStream;
 
-# create a nameless event (will be send to "message")
-$a = Event::create();
+# Create a nameless event (will be send to "message")
+# `data` is a required field
+$evt1 = new Event([
+  "data" => "ping",
+]);
 
-# create a named event (will be send to the defined name, in this case "login")
-$b = Event::create( 'login' );
+# Create a named event (will be send to the defined name, in this case "login")
+# `data` is a required field
+$evt2 = new Event([
+  "name" => "login",
+  "data" => "ping",
+]);
 
-# set content for the events
-$a->data = 'new message' . "\n" . 'in your inbox';
-$b->data = [
-  'user' => 'foobar',
-  'id'   => 42
-];
+# Set content for the events (as a string)
+$evt3 = new Event([
+  "data" => join("\n", [
+    "new message",
+    "in your inbox"
+  ]),
+]);
 
-# you can also define a retry time or an event id
-$a->id = 1337;
-$b->retry = 3000; # 3000 milliseconds = 3 seconds
+# You can also use an array.
+# The library will encode it in JSON.
+$evt4 = new Event([
+  "data" => [
+    "user" => "foobar",
+    "id"   => 42,
+  ],
+]);
 
-# create a event-stream
-$stream = EventStream::create();
+# You can also define the retry time (in milliseconds).
+# By default the browser will try to reconnect every three seconds.
+$evt5 = new Event([
+  "data" => "foo",
+  "retry" => 1000, # = 1 second
+]);
 
-# add events to the stream (events without a name are collected at the beginning of the message)
-$stream->add( $b );
-$stream->add( $a );
+# And you can a define an id for your event.
+$evt6 = new Event([
+  "data" => "foo",
+  "id" => 1337,
+]);
+
+# Create a event-stream
+$stream = new EventStream();
+
+# Add events to the stream.
+# Events without a name are collected at the beginning of the message.
+$stream->add($evt1);
+$stream->add($evt2);
+$stream->add($evt3);
+$stream->add($evt4);
+$stream->add($evt5);
+$stream->add($evt6);
 
 # generate content
-echo $stream->generate();
+echo $stream->print();
 ```
 The script below would generate the following message:
 ```
-id: 1337
+data: ping
+
+name: login
+data: ping
+
 data: new message
 data: in your inbox
 
-event: login
-retry: 3000
 data: {"user":"foobar","id":42}
 
+retry: 1000
+data: foo
+
+id: 1337
+data: foo
 ```
+You can also send the events directly with the appropriate headers set:
+```php
+$stream->send();
+```
+Or you use your own printer. The printer is a callback function that gets one parameter, containing the generated event stream as a string:
+```php
+$stream->print(function ($string) {
+  # do stuff with $string
+});
+```
+You can also use it to modify the data before it is returned:
+```php
+$value = $stream->print(function ($string) {
+  return $string . "\n\ndata: last event\n";
+});
+```
+
 On the client-side you can fetch this with the following script:
 ```JavaScript
-if ( !window.EventStream ) {
-  console.warn( 'EventStream is not available' );
+if (!window.EventStream) {
+  console.warn("EventStream is not available");
 }
 
-var stream = new EventStream( 'events.php' );
+var stream = new EventStream("events.php");
 // for nameless events
-stream.addEventListener( 'message', function ( e ) {
-  console.log( e.data );
+stream.addEventListener("message", function (evt) {
+  console.log(evt.data);
 });
 
 // for login events
-stream.addEventListener( 'login', function ( e ) {
-  var data = JSON.parse( e.data );
-  console.log( 'user "' + data.user + '" with id ' + data.id + ' has logged in' );
+stream.addEventListener("login", function (evt) {
+  var data = JSON.parse(evt.data);
+  console.log(`user '${data.user}' with id '${data.id}' has logged in`);
 });
 
 // on error
-stream.addEventListener( 'error' function ( e ) {
-  console.warn( 'an error occured: ' + e.data );
+stream.addEventListener("error", function (evt) {
+  console.warn("an error occured: " + evt.data);
 });
 ```

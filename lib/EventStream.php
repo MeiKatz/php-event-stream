@@ -1,70 +1,62 @@
 <?php
-namespace ServerSentEvents {
-  require_once 'event.php';
+  declare(strict_types=1);
 
-  class EventStream {
+  namespace ServerSentEvents;
+
+  require_once "EventStreamInterface.php";
+  require_once "EventInterface.php";
+
+  class EventStream implements EventStreamInterface {
     private $events = array();
 
-    public static function create() {
-      return new self();
-    }
-
-    private function __construct() {}
-
-    public function generate() {
-      $message = '';
-
-      # no events, no content
-      if ( empty( $this->events ) ) {
-        return;
-      }
-
-      # collect events without a name
-      $nameless_events = array_filter( $this->events, function ( $event ) {
-        return ( $event->name === null );
-      });
-      # collect events with a name
-      $named_events = array_filter( $this->events, function ( $event ) {
-        return ( $event->name !== null );
-      });
-
-      # send nameless events before the named events
-      $events = array_merge( $nameless_events, $named_events );
-
-      # collect generated event messages
-      foreach ( $events as $event ) {
-        $tmp      = $event->generate();
-        # return-value could be null
-        $message .= ( $tmp === null ? '' : $tmp . "\n" );
-      }
-
-      return $message;
-    }
-
-    public function add(Event $event) {
+    public function add(EventInterface $event): void {
       array_push($this->events, $event);
     }
 
-    public function __toString() {
-      $ret = $this->generate();
-      return ( $ret === null ? '' : $ret );
+    public function print(\Closure $printer = null) {
+      if ($printer === null) {
+        return $this->generate();
+      }
+
+      return $printer(
+        $this->generate()
+      );
     }
 
-    public function send() {
-      $message = $this->generate();
+    public function __toString(): string {
+      return $this->print();
+    }
 
-      if ( $message === null ) {
-        return false;
+    public function send(): void {
+      $this->print(function ($message) {
+        if (empty($message)) {
+          return;
+        }
+
+        if (headers_sent()) {
+          throw new \RuntimeException(
+            "could not send contents: headers already sent"
+          );
+        }
+
+        header("Content-Type: text/event-stream");
+        header("Content-Length: " . strlen($message));
+
+        echo $message;
+      });
+    }
+
+    private function generate(): string {
+      # no events, no content
+      if (empty($this->events)) {
+        return "";
       }
 
-      if ( headers_sent() ) {
-        return false;
-      }
+      # convert all events to strings
+      $messages = array_map(function ($event) {
+        return $event->print();
+      }, $this->events);
 
-      header( 'Content-Type: text/event-stream' );
-      header( 'Content-Length: ' . strlen( $message ) );
-      echo $message;
-      return true;
+      return implode("\n", $messages);
     }
   }
-}
