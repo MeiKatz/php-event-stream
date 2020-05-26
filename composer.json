@@ -1,0 +1,14 @@
+{
+  "autoload": {
+    "classmap": [
+      "lib/"
+    ]
+  },
+  "require": {
+    "peridot-php/peridot": "^1.19",
+    "peridot-php/leo": "^1.6"
+  },
+  "scripts": {
+    "test": "./vendor/bin/peridot --force-colors ./lib"
+  }
+}
